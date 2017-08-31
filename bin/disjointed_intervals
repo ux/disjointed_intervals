@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'pathname'
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../../Gemfile', Pathname.new(__FILE__).realpath)
+
+require 'rubygems'
+require 'bundler/setup'
+
+require_relative '../lib/disjointed_intervals'
+
+MAX_MINUTE_IN_DAY = 24 * 60 - 1
+
+@disjointed_intervals = DisjointedIntervals.new
+
+def ensure_range_within_day!(from, to)
+  { from: from, to: to }.each do |key, value|
+    fail "`#{key}` should be between 0 and #{MAX_MINUTE_IN_DAY}" unless value && value.between?(0, MAX_MINUTE_IN_DAY)
+  end
+end
+
+def add(from, to)
+  ensure_range_within_day!(from, to)
+  @disjointed_intervals.add(from, to)
+end
+
+def remove(from, to)
+  ensure_range_within_day!(from, to)
+  @disjointed_intervals.remove(from, to)
+end
+
+def show
+  @disjointed_intervals.intervals
+end
+
+puts <<-HELP
+Following commands are supported:
+  show             : display current disjointed intervals
+  add from, to     : add range
+  remove from, to  : remove range
+  exit             : exit
+
+Example:
+add 1, 5
+ => [[1, 5]]
+
+remove 2, 3
+ => [[1, 2], [3, 5]]
+
+add 6, 8
+ => [[1, 2], [3, 5], [6, 8]]
+
+remove 4, 7
+=> [[1, 2], [3, 4], [7, 8]]
+
+add 2, 7
+ => [[1, 8]]
+
+=> #{show.inspect}
+
+HELP
+
+load Gem.bin_path('pry', 'pry')
